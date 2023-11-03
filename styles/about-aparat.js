@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   aboutAparatSelectCurrentContent: {
     flexDirection: "row",
     justifyContent: "space-around",
+    alignItems: "center",
     width: "80%",
   },
 
@@ -134,6 +135,7 @@ const styles = StyleSheet.create({
 
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 30,
   },

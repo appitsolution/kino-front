@@ -176,6 +176,7 @@ const Statistics = () => {
           type: "group",
         };
       });
+      apparatus.sort((a, b) => a.serial_number.localeCompare(b.serial_number));
       setData([...apparatus, ...groups]);
     } catch (err) {
       console.log(err);
@@ -211,35 +212,176 @@ const Statistics = () => {
     }
   };
 
-  const groupStat = (data) => {
-    // Создайте объект для группировки
+  const groupStat = (data, groupingType) => {
     const groupedData = {};
 
     data.forEach((item) => {
-      const key = `${parseDateToCustomFormat2(item.date)}_${item.time.slice(
-        0,
-        2
-      )}`;
-      if (!groupedData[key]) {
-        // Если группа еще не существует, создайте ее
-        groupedData[key] = {
-          date: parseDateToCustomFormat2(item.date),
-          time: item.time.slice(0, 5),
-          portions: 0,
-          price: 0,
-        };
+      let key;
+
+      switch (groupingType) {
+        case "day":
+          key = `${item.date} ${item.time.slice(0, 2)}:00`;
+          break;
+        case "week":
+          const date = new Date(item.date);
+          const weekStartDate = new Date(date);
+          weekStartDate.setDate(date.getDate() - date.getDay()); // Нахождение начала недели
+          key = weekStartDate.toISOString().split("T")[0]; // Использование начала недели в качестве ключа
+          break;
+        case "month":
+          key = item.date;
+          break;
+        case "year":
+          key = item.date.slice(0, 7);
+          break;
+        default:
+          key = `${item.date} ${item.time.slice(0, 2)}:00`;
       }
 
-      // Добавьте значение score и price к текущей группе
-      groupedData[key].portions += item.portions;
-      groupedData[key].price += item.price;
+      if (!groupedData[key]) {
+        groupedData[key] = [];
+      }
+
+      const existingItem = groupedData[key].find(
+        (groupedItem) => groupedItem.date === item.date
+      );
+
+      if (!existingItem) {
+        groupedData[key].push({
+          date: item.date,
+          time: `${item.time.slice(0, 2)}:00`,
+          portions: item.portions,
+          price: item.price,
+        });
+      } else {
+        existingItem.portions += item.portions;
+        existingItem.price += item.price;
+      }
     });
 
-    // Преобразуйте объект обратно в массив
-    const result = Object.values(groupedData);
+    let result = Object.values(groupedData).flat();
 
+    // Если groupingType "year", группировать данные по месяцам
+    if (groupingType === "year") {
+      const monthlyGroupedData = {};
+
+      result.forEach((item) => {
+        const monthKey = item.date.slice(0, 7);
+
+        if (!monthlyGroupedData[monthKey]) {
+          monthlyGroupedData[monthKey] = {
+            date: monthKey,
+            time: "",
+            portions: 0,
+            price: 0,
+          };
+        }
+
+        monthlyGroupedData[monthKey].portions += item.portions;
+        monthlyGroupedData[monthKey].price += item.price;
+      });
+
+      result = Object.values(monthlyGroupedData);
+    }
+
+    console.log(result);
     return result;
   };
+
+  const groupStatGraph = (data, groupingType) => {
+    const groupedData = {};
+
+    data.forEach((item) => {
+      let key;
+
+      switch (groupingType) {
+        case "day":
+          key = `${item.date} ${item.time.slice(0, 2)}:00`;
+          break;
+        case "week":
+          const date = new Date(item.date);
+          const weekStartDate = new Date(date);
+          weekStartDate.setDate(date.getDate() - date.getDay()); // Нахождение начала недели
+
+          const hours = parseInt(item.time.slice(0, 2), 10);
+          const interval = Math.floor(hours / 6) * 6; // Группировка по интервалам по 6 часов
+
+          weekStartDate.setHours(interval);
+          key = weekStartDate.toISOString().split("T")[0]; // Использование начала недели с интервалом в 6 часов в качестве ключа
+          break;
+        case "month":
+          key = item.date;
+          break;
+        case "year":
+          key = item.date.slice(0, 7);
+          break;
+        default:
+          key = `${item.date} ${item.time.slice(0, 2)}:00`;
+      }
+
+      if (!groupedData[key]) {
+        groupedData[key] = [];
+      }
+
+      const existingItem = groupedData[key].find(
+        (groupedItem) => groupedItem.date === item.date
+      );
+
+      if (!existingItem) {
+        groupedData[key].push({
+          date: item.date,
+          time: `${item.time.slice(0, 2)}:00`,
+          portions: item.portions,
+          price: item.price,
+        });
+      } else {
+        existingItem.portions += item.portions;
+        existingItem.price += item.price;
+      }
+    });
+
+    let result = Object.values(groupedData).flat();
+
+    // Если groupingType "year", группировать данные по месяцам
+    if (groupingType === "year") {
+      const monthlyGroupedData = {};
+
+      result.forEach((item) => {
+        const monthKey = item.date.slice(0, 7);
+
+        if (!monthlyGroupedData[monthKey]) {
+          monthlyGroupedData[monthKey] = {
+            date: monthKey,
+            time: "",
+            portions: 0,
+            price: 0,
+          };
+        }
+
+        monthlyGroupedData[monthKey].portions += item.portions;
+        monthlyGroupedData[monthKey].price += item.price;
+      });
+
+      result = Object.values(monthlyGroupedData);
+    }
+
+    console.log(result);
+    return result;
+  };
+
+  function sortDateTime(array) {
+    return array.sort(function (a, b) {
+      // Сначала сравниваем даты
+      if (a.date < b.date) return -1;
+      if (a.date > b.date) return 1;
+
+      // Если даты одинаковы, сравниваем время
+      if (a.time < b.time) return -1;
+      if (a.time > b.time) return 1;
+
+      return 0;
+    });
+  }
 
   const globalStat = async () => {
     const token = await AsyncStorage.getItem("token");
@@ -269,7 +411,7 @@ const Statistics = () => {
 
           const groupData =
             selectTable.value === "table_agre"
-              ? groupStat(result.data)
+              ? groupStat(result.data, selectDays.value)
               : result.data;
 
           const totalPrice = result.data.reduce(
@@ -281,29 +423,55 @@ const Statistics = () => {
             0
           );
 
-          setDataStatTableRow([
-            "ID",
-            t("Дата"),
-            t("Час"),
-            t(`Кількість`, { totalPortions }),
-            t(`Ціна порцій`, { totalPrice }),
-          ]);
+          if (selectDays.value === "week" || selectDays.value === "day") {
+            setDataStatTableRow([
+              "ID",
+              t("Дата"),
+              t("Час"),
+              t(`Кількість`, { totalPortions }),
+              t(`Ціна порцій`, { totalPrice }),
+            ]);
+          } else {
+            setDataStatTableRow([
+              "ID",
+              t("Дата"),
+              t(`Кількість`, { totalPortions }),
+              t(`Ціна порцій`, { totalPrice }),
+            ]);
+          }
+
+          sortDateTime(groupData);
 
           const newTableData = groupData.map((item, index) => {
-            return [
-              index + 1,
-              parseDateToCustomFormat2(item.date),
-              item.time.slice(0, 5),
-              item.portions,
-              item.price,
-            ];
+            if (selectDays.value === "week" || selectDays.value === "day") {
+              return [
+                index + 1,
+                parseDateToCustomFormat2(item.date),
+                item.time.slice(0, 5),
+                item.portions,
+                item.price,
+              ];
+            } else {
+              return [
+                index + 1,
+                parseDateToCustomFormat2(item.date),
+                item.portions,
+                item.price,
+              ];
+            }
           });
 
-          const newGraphicsData = groupStat(result.data).map((item) => {
+          const newGraphicsData = groupStatGraph(
+            result.data,
+            selectDays.value
+          ).map((item) => {
             return item.portions;
           });
 
-          const newGraphicsLabel = groupStat(result.data).map((item) => {
+          const newGraphicsLabel = groupStatGraph(
+            result.data,
+            selectDays.value
+          ).map((item) => {
             return item.time.slice(0, 5);
           });
 
@@ -333,6 +501,8 @@ const Statistics = () => {
           );
 
           setDataStatTableRow(["ID", "Дата", "Час", `Текст помилки`]);
+
+          sortDateTime(result.data);
 
           const newTableData = result.data.map((item, index) => {
             return [
@@ -383,7 +553,7 @@ const Statistics = () => {
 
           const groupData =
             selectTable.value === "table_agre"
-              ? groupStat(result.data)
+              ? groupStat(result.data, selectDays.value)
               : result.data;
 
           const totalPrice = result.data.reduce(
@@ -403,6 +573,8 @@ const Statistics = () => {
             t(`Ціна порцій`, { totalPrice }),
           ]);
 
+          sortDateTime(groupData);
+
           const newTableData = groupData.map((item, index) => {
             return [
               index + 1,
@@ -413,19 +585,31 @@ const Statistics = () => {
             ];
           });
 
-          const newGraphicsData = groupStat(result.data).map((item) => {
+          const newGraphicsData = groupStatGraph(
+            result.data,
+            selectDays.value
+          ).map((item) => {
             return item.portions;
           });
 
-          const newGraphicsLabel = groupStat(result.data).map((item) => {
+          const newGraphicsLabel = groupStatGraph(
+            result.data,
+            selectDays.value
+          ).map((item) => {
             return item.time.slice(0, 5);
           });
 
-          const newGraphicsDataAlt = groupStat(resultAlt.data).map((item) => {
+          const newGraphicsDataAlt = groupStatGraph(
+            resultAlt.data,
+            selectDays.value
+          ).map((item) => {
             return item.portions;
           });
 
-          const newGraphicsLabelAlt = groupStat(resultAlt.data).map((item) => {
+          const newGraphicsLabelAlt = groupStatGraph(
+            resultAlt.data,
+            selectDays.value
+          ).map((item) => {
             return item.time.slice(0, 5);
           });
 
@@ -460,6 +644,8 @@ const Statistics = () => {
 
           setDataStatTableRow(["ID", t("Дата"), t("Час"), t(`Текст помилки`)]);
 
+          sortDateTime(result.data);
+
           const newTableData = result.data.map((item, index) => {
             return [
               index + 1,
@@ -479,6 +665,7 @@ const Statistics = () => {
 
   const startRequest = async () => {
     const { dataFetch, verify } = await useVerify();
+    if (!verify) navigation.navigate("home");
     if (verify) {
       setUserData(dataFetch);
     }

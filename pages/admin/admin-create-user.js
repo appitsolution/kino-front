@@ -78,9 +78,10 @@ const AdminCreateUser = () => {
 
     try {
       const token = await AsyncStorage.getItem("token");
+      const { dataFetch } = await useVerify();
 
       const result = await axios.post(
-        `${SERVER}/auth/register`,
+        `${SERVER}/auth/register?user_id=${dataFetch.id}`,
         {
           role: selectedRole.value,
           login: login,
@@ -123,6 +124,7 @@ const AdminCreateUser = () => {
 
   const checkUser = async () => {
     const { verify, dataFetch } = await useVerify();
+    if (!verify) navigation.navigate("home");
     setData(checkRole[dataFetch.role]);
   };
 

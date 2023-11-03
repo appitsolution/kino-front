@@ -146,6 +146,7 @@
     "Режим сну вимкнено": "Sleep mode is disabled",
     "У вас немає прав": "You have no rights",
     "Не обрано": "Not selected",
-    "Введіть значення": "Enter value"
+    "Введіть значення": "Enter value",
+    "Такий serial_number вже є": "Such a serial_number already exists"
   }
 }

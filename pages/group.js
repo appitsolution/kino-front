@@ -82,7 +82,8 @@ const Group = () => {
 
   const getData = async () => {
     try {
-      const { dataFetch } = await useVerify();
+      const { dataFetch, verify } = await useVerify();
+      if (!verify) navigation.navigate("home");
       const token = await AsyncStorage.getItem("token");
 
       const result = await axios(
@@ -413,7 +414,7 @@ const Group = () => {
                   />
                 </View>
                 <Text style={styles.groupListItemText}>
-                  {item.serial_number}
+                  {item.name ? item.name : item.serial_number}
                 </Text>
               </TouchableOpacity>
             ))}

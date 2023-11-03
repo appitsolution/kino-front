@@ -31,6 +31,8 @@ import i18next from "i18next";
 import NotificationService from "./utils/notification-services";
 import InternetStatus from "./utils/InternetStatus";
 import { AppState } from "react-native";
+import { store } from "./redux/store";
+import { Provider } from "react-redux";
 
 AsyncStorage.getItem("lang").then((res) => {
   if (!res) {
@@ -93,125 +95,127 @@ export default function App() {
 
   return (
     <>
-      <NavigationContainer
-        onReady={() => {
-          AppState.addEventListener("change", handleAppStateChange);
+      <Provider store={store}>
+        <NavigationContainer
+          onReady={() => {
+            AppState.addEventListener("change", handleAppStateChange);
 
-          return () => {
-            AppState.removeEventListener("change", handleAppStateChange);
-          };
-        }}
-      >
-        <Stack.Navigator
-          screenOptions={{
-            cardStyle: {
-              backgroundColor: "#202124",
-            },
+            return () => {
+              AppState.removeEventListener("change", handleAppStateChange);
+            };
           }}
-          initialRouteName="home"
         >
-          <Stack.Screen
-            name="home"
-            component={Home}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          <Stack.Navigator
+            screenOptions={{
+              cardStyle: {
+                backgroundColor: "#202124",
+              },
             }}
-          />
-          <Stack.Screen
-            name="statistics"
-            component={Statistics}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="admin"
-            component={Admin}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="admin/createUser"
-            component={AdminCreateUser}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="admin/createOwner"
-            component={AdminCreateOwner}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="admin/updateUser"
-            component={AdminUpdateUser}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="admin/updateOwner"
-            component={AdminUpdateOwner}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
+            initialRouteName="home"
+          >
+            <Stack.Screen
+              name="home"
+              component={Home}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="statistics"
+              component={Statistics}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="admin"
+              component={Admin}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="admin/createUser"
+              component={AdminCreateUser}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="admin/createOwner"
+              component={AdminCreateOwner}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="admin/updateUser"
+              component={AdminUpdateUser}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="admin/updateOwner"
+              component={AdminUpdateOwner}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
 
-          <Stack.Screen
-            name="status-aparat"
-            component={StatusAparat}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="status-aparat-current"
-            component={StatusAparatCurrent}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="group"
-            component={Group}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-          <Stack.Screen
-            name="about-aparat"
-            component={AboutAparat}
-            options={{
-              animationEnabled: false,
-              headerShown: false,
-              cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+            <Stack.Screen
+              name="status-aparat"
+              component={StatusAparat}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="status-aparat-current"
+              component={StatusAparatCurrent}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="group"
+              component={Group}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+            <Stack.Screen
+              name="about-aparat"
+              component={AboutAparat}
+              options={{
+                animationEnabled: false,
+                headerShown: false,
+                cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+              }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </Provider>
     </>
   );
 }

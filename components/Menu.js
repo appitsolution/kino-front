@@ -8,6 +8,11 @@ import out from "../assets/images/out.png";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import useGuard from "./hooks/useGuard";
+import { useDispatch } from "react-redux";
+import { setLang } from "../redux/slice/lang";
+import axios from "axios";
+import { SERVER } from "../constants/async";
+import useVerify from "./hooks/useVerify";
 
 const MenuMobile = ({ open = false, current = "statistics", closeFun }) => {
   const navigation = useNavigation();
@@ -20,10 +25,20 @@ const MenuMobile = ({ open = false, current = "statistics", closeFun }) => {
   };
 
   const logOut = async () => {
-    await AsyncStorage.setItem("token", "");
-    closeMenu();
-    navigation.navigate("home");
+    try {
+      const { dataFetch } = await useVerify();
+      await AsyncStorage.setItem("token", "");
+      await axios.post(`${SERVER}/notification/delete?user_id=${dataFetch.id}`);
+      closeMenu();
+      navigation.navigate("home");
+    } catch (err) {
+      closeMenu();
+      navigation.navigate("home");
+      console.log(err);
+    }
   };
+
+  const dispatch = useDispatch();
 
   const changeLang = async () => {
     const lang = await AsyncStorage.getItem("lang");
@@ -32,12 +47,14 @@ const MenuMobile = ({ open = false, current = "statistics", closeFun }) => {
 
       i18n.changeLanguage(currentLang === "ua" ? "en" : "ua");
       setCurrentLang(currentLang === "ua" ? "en" : "ua");
+      dispatch(setLang(currentLang === "ua" ? "en" : "ua"));
       return;
     }
 
     await AsyncStorage.setItem("lang", currentLang === "ua" ? "en" : "ua");
     i18n.changeLanguage(currentLang === "ua" ? "en" : "ua");
     setCurrentLang(currentLang === "ua" ? "en" : "ua");
+    dispatch(setLang(currentLang === "ua" ? "en" : "ua"));
   };
 
   const checkLang = async () => {

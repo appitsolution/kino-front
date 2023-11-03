@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useTranslation } from "react-i18next";
 import useGuard from "../components/hooks/useGuard";
+import useVerify from "../components/hooks/useVerify";
 
 const Admin = () => {
   const navigation = useNavigation();
@@ -65,11 +66,17 @@ const Admin = () => {
   const getUser = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const result = await axios(`${SERVER}/admininstration/quick`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { dataFetch, verify } = await useVerify();
+      if (!verify) navigation.navigate("home");
+      const result = await axios(
+        `${SERVER}/admininstration/quick?user_id=${dataFetch.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (result.data.code === 200) {
         const sortUsers = result.data.users.sort((a, b) =>
           a.username.toLowerCase().localeCompare(b.username.toLowerCase())

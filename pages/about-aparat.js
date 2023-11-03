@@ -31,6 +31,7 @@ import FlashMessage from "react-native-flash-message";
 import { showMessage, hideMessage } from "react-native-flash-message";
 import Control from "../components/about-aparat/Control";
 import useGuard from "../components/hooks/useGuard";
+import { useSelector } from "react-redux";
 
 const AboutAparat = () => {
   const isFocused = useIsFocused();
@@ -64,7 +65,7 @@ const AboutAparat = () => {
   const onChangeGlobal = (event, selectedDate) => {
     const currentDate = selectedDate;
     Platform.OS === "android" && setShowGlobal(false);
-    parseDateToCustomFormat(inputDate);
+
     setDateGlobal(currentDate);
   };
 
@@ -118,7 +119,7 @@ const AboutAparat = () => {
           duration: 5000,
         });
 
-        changeCurrentAparat(aparatList[0].serial_number);
+        changeCurrentAparat(aparatList[0].id);
 
         return;
       }
@@ -128,6 +129,8 @@ const AboutAparat = () => {
       }
       if (result.data.information?.commissioning_date) {
         setDateGlobal(new Date(result.data.information.commissioning_date));
+      } else {
+        setDateGlobal(0);
       }
 
       if (result.data.information?.owner) {
@@ -152,6 +155,8 @@ const AboutAparat = () => {
       setInformation(result.data.information);
       setComplectation(result.data.complectation);
       setService(result.data.service);
+      console.log(result.data.information);
+      setSelectedSerialNumber(result.data.information.serial_number);
     } catch (err) {
       console.log(err);
     }
@@ -162,10 +167,10 @@ const AboutAparat = () => {
     getInformation();
   }, [currentAparat]);
 
-  const changeCurrentAparat = (serial_number) => {
-    const searchAparat = aparatList.find(
-      (item) => item.serial_number === serial_number
-    );
+  const changeCurrentAparat = async (id) => {
+    const searchAparat = aparatList.find((item) => item.id === id);
+
+    AsyncStorage.setItem("lastAboutAparat", String(searchAparat.id));
 
     setIsOpenSelect(false);
 
@@ -173,14 +178,18 @@ const AboutAparat = () => {
   };
 
   const getStart = async () => {
-    const { dataFetch } = await useVerify();
+    const { dataFetch, verify } = await useVerify();
+    if (!verify) navigation.navigate("home");
     const token = await AsyncStorage.getItem("token");
 
-    const users = await axios(`${SERVER}/admininstration/quick`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const users = await axios(
+      `${SERVER}/admininstration/quick?user_id=${dataFetch.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     const lang = await AsyncStorage.getItem("lang");
 
@@ -195,10 +204,7 @@ const AboutAparat = () => {
 
     const clients = users.data.users.filter((item) => {
       if (item.role === "CLIENT") {
-        return {
-          label: item.username,
-          value: item.id,
-        };
+        return item;
       } else {
         return;
       }
@@ -237,7 +243,7 @@ const AboutAparat = () => {
     if (clients.length === 0) {
       setDataUsers([]);
     } else {
-      setDataOwners(clientsList);
+      setDataUsers(clientsList);
     }
 
     if (dealers.length === 0) {
@@ -269,11 +275,39 @@ const AboutAparat = () => {
 
       return item;
     });
-    setSelectedSerialNumber(
-      result.data.length === 0 ? {} : result.data[0].serial_number
+
+    aparatListFilter.sort((a, b) =>
+      a.serial_number.localeCompare(b.serial_number)
     );
+
+    const lastAboutAparat = await AsyncStorage.getItem("lastAboutAparat");
+    if (lastAboutAparat || lastAboutAparat !== undefined) {
+      const currentAparatFind = result.data.find(
+        (item) => item.id === Number(lastAboutAparat)
+      );
+
+      setSelectedSerialNumber(
+        result.data.length === 0
+          ? {}
+          : currentAparatFind
+          ? currentAparatFind.serial_number
+          : result.data[0].serial_number
+      );
+      setCurrentAparat(
+        result.data.length === 0
+          ? {}
+          : currentAparatFind
+          ? currentAparatFind
+          : result.data[0]
+      );
+    } else {
+      setSelectedSerialNumber(
+        result.data.length === 0 ? {} : result.data[0].serial_number
+      );
+
+      setCurrentAparat(result.data.length === 0 ? {} : result.data[0]);
+    }
     setAparatList(aparatListFilter);
-    setCurrentAparat(result.data.length === 0 ? {} : result.data[0]);
   };
 
   const updateInformation = async () => {
@@ -282,28 +316,61 @@ const AboutAparat = () => {
       const token = await AsyncStorage.getItem("token");
       const lang = await AsyncStorage.getItem("lang");
 
+      const bodyRequest = await (async () => {
+        if (currentAparat.serial_number === selectedSerialNumber) {
+          return {
+            name: information.name,
+            location: information.location,
+            owner: selectedOwners ? selectedOwners : information.owner,
+            user: selectedUsers ? selectedUsers : information.user,
+            dealer: selectedDealer ? selectedDealer : information.dealer,
+            operator: selectedOperator
+              ? selectedOperator
+              : information.operator,
+            shipment_date: parseDateToCustomFormat(date),
+            commissioning_date: parseDateToCustomFormat(dateGlobal),
+            number_score: information.number_score,
+            number_act: information.number_act,
+            lang: lang,
+          };
+        } else {
+          return {
+            name: information.name,
+            location: information.location,
+            owner: selectedOwners ? selectedOwners : information.owner,
+            user: selectedUsers ? selectedUsers : information.user,
+            dealer: selectedDealer ? selectedDealer : information.dealer,
+            operator: selectedOperator
+              ? selectedOperator
+              : information.operator,
+            serial_number: selectedSerialNumber,
+            shipment_date: parseDateToCustomFormat(date),
+            commissioning_date: parseDateToCustomFormat(dateGlobal),
+            number_score: information.number_score,
+            number_act: information.number_act,
+            lang: lang,
+          };
+        }
+      })();
+
       const result = await axios.put(
         `${SERVER}/about-devices/devices/information?user_id=${dataFetch.id}&serial_number=${currentAparat.serial_number}`,
-        {
-          name: information.name,
-          location: information.location,
-          owner: selectedOwners ? selectedOwners : information.owner,
-          user: selectedUsers ? selectedUsers : information.user,
-          dealer: selectedDealer ? selectedDealer : information.dealer,
-          operator: selectedOperator ? selectedOperator : information.operator,
-          serial_number: selectedSerialNumber,
-          shipment_date: parseDateToCustomFormat(date),
-          commissioning_date: parseDateToCustomFormat(dateGlobal),
-          number_score: information.number_score,
-          number_act: information.number_act,
-          lang: lang,
-        },
+        bodyRequest,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+      if (result.data.code === 409) {
+        showMessage({
+          message: t("Помилка"),
+          description: t(`Такий serial_number вже є`),
+          type: "danger",
+          duration: 5000,
+        });
+        return;
+      }
       if (result.data.code === 200) {
         showMessage({
           message: t("Успіх"),
@@ -316,7 +383,7 @@ const AboutAparat = () => {
           serial_number: selectedSerialNumber,
         });
       }
-      console.log(result.data);
+      getStart();
     } catch (err) {
       if (err.response.status === 403) {
         accessNot();
@@ -358,6 +425,7 @@ const AboutAparat = () => {
       }
 
       if (result.data.code !== 200) {
+        console.log(result.data);
         showMessage({
           message: t("Помилка"),
           description: `Сталася помилка`,
@@ -375,7 +443,7 @@ const AboutAparat = () => {
 
   const updateService = async (id, value) => {
     const updateDataService = [
-      { id: id, newValue: Number(information?.all_sell) - Number(value) },
+      { id: id, newValue: Number(information?.all_sell) },
     ];
     setService(
       service.map((item) => {
@@ -383,7 +451,7 @@ const AboutAparat = () => {
           return {
             ...item,
             value: {
-              value: Number(information?.all_sell) - Number(value),
+              value: Number(information?.all_sell),
             },
           };
         } else {
@@ -395,6 +463,8 @@ const AboutAparat = () => {
       const token = await AsyncStorage.getItem("token");
       const { dataFetch } = await useVerify();
 
+      console.log(currentAparat.serial_number);
+
       const result = await axios.put(
         `${SERVER}/about-devices/devices/service?user_id=${dataFetch.id}&serial_number=${currentAparat.serial_number}`,
         updateDataService,
@@ -404,6 +474,8 @@ const AboutAparat = () => {
           },
         }
       );
+
+      console.log(result.data);
 
       if (result.data.code === 200) {
         showMessage({
@@ -465,6 +537,7 @@ const AboutAparat = () => {
   const [guardInformation, setGuardInformation] = useState(false);
   const [guardComplectation, setGuardComplectation] = useState(false);
   const [guardService, setGuardService] = useState(false);
+
   const checkGuard = async () => {
     const checkInformation = await useGuard("about-aparat/information/edit");
     const checkComplectation = await useGuard(
@@ -481,6 +554,20 @@ const AboutAparat = () => {
     await checkGuard();
     getStart();
   };
+
+  const currentLang = useSelector((state) => state.currentLang.value);
+
+  const [firstGet, setFirstGet] = useState(false);
+  useEffect(() => {
+    console.log("ok");
+    if (isFocused) {
+      if (firstGet) {
+        requestAll();
+      } else {
+        setFirstGet(true);
+      }
+    }
+  }, [currentLang]);
 
   useEffect(() => {
     if (isFocused) {
@@ -528,7 +615,12 @@ const AboutAparat = () => {
                       ? ""
                       : currentAparat?.name}
                   </Text>
-                  <Text style={styles.aboutAparatSelectCurrentContentName}>
+                  <Text
+                    style={{
+                      ...styles.aboutAparatSelectCurrentContentName,
+                      maxWidth: 120,
+                    }}
+                  >
                     {JSON.stringify(currentAparat) === "{}"
                       ? ""
                       : currentAparat.location}
@@ -550,16 +642,21 @@ const AboutAparat = () => {
 
               <View style={styles.aboutAparatSelectModal(isOpenSelect)}>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  {aparatList.map((item) => (
+                  {aparatList.map((item, index) => (
                     <TouchableOpacity
                       style={styles.aboutAparatSelectModalItem}
-                      key={item.serial_number}
-                      onPress={() => changeCurrentAparat(item.serial_number)}
+                      key={index}
+                      onPress={() => changeCurrentAparat(item.id)}
                     >
                       <Text style={styles.aboutAparatSelectModalItemName}>
                         {item.name}
                       </Text>
-                      <Text style={styles.aboutAparatSelectModalItemName}>
+                      <Text
+                        style={{
+                          ...styles.aboutAparatSelectModalItemName,
+                          maxWidth: 120,
+                        }}
+                      >
                         {item.location}
                       </Text>
                       <Text style={styles.aboutAparatSelectModalItemScore}>
@@ -689,7 +786,7 @@ const AboutAparat = () => {
                                 }
                                 value={
                                   JSON.stringify(information) === "{}"
-                                    ? ""
+                                    ? "не обрано"
                                     : information?.name
                                 }
                                 onChangeText={(value) =>
@@ -706,7 +803,9 @@ const AboutAparat = () => {
                             <Text style={styles.aboutAparatStatInfoItemValue}>
                               {JSON.stringify(information) === "{}"
                                 ? ""
-                                : information?.name}
+                                : information.name
+                                ? information.name
+                                : t("Не обрано")}
                             </Text>
                           </>
                         )}
@@ -716,8 +815,38 @@ const AboutAparat = () => {
                         style={{
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity:
-                            guardInformation || userRole === "CLIENT" ? 1 : 0,
+                            guardInformation ||
+                            Boolean(
+                              userRole === "CLIENT" ||
+                                userRole === "ADMIN" ||
+                                userRole === "OPERATOR" ||
+                                userRole === "MANAGER"
+                            )
+                              ? 1
+                              : 0,
                         }}
+                        disabled={
+                          guardInformation ||
+                          Boolean(
+                            userRole === "CLIENT" ||
+                              userRole === "ADMIN" ||
+                              userRole === "OPERATOR" ||
+                              userRole === "MANAGER"
+                          )
+                            ? false
+                            : true
+                        }
+                        activeOpacity={
+                          guardInformation ||
+                          Boolean(
+                            userRole === "CLIENT" ||
+                              userRole === "ADMIN" ||
+                              userRole === "OPERATOR" ||
+                              userRole === "MANAGER"
+                          )
+                            ? 1
+                            : 0
+                        }
                         onPress={() => {
                           if (informationUpdate === 1) {
                             changeButtonUpdateInformation();
@@ -757,7 +886,9 @@ const AboutAparat = () => {
                         ) : (
                           <>
                             <Text style={styles.aboutAparatStatInfoItemValue}>
-                              {information?.location}
+                              {information?.location
+                                ? information.location
+                                : t("Не обрано")}
                             </Text>
                           </>
                         )}
@@ -768,7 +899,11 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
+
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -822,7 +957,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -880,7 +1018,9 @@ const AboutAparat = () => {
                         ) : (
                           <>
                             <Text style={styles.aboutAparatStatInfoItemValue}>
-                              {information?.owner}
+                              {information?.owner
+                                ? information.owner
+                                : t("Не обрано")}
                             </Text>
                           </>
                         )}
@@ -891,7 +1031,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -949,7 +1092,9 @@ const AboutAparat = () => {
                         ) : (
                           <>
                             <Text style={styles.aboutAparatStatInfoItemValue}>
-                              {information?.user}
+                              {information?.user
+                                ? information.user
+                                : t("Не обрано")}
                             </Text>
                           </>
                         )}
@@ -960,7 +1105,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -1027,9 +1175,20 @@ const AboutAparat = () => {
                       <TouchableOpacity
                         style={{
                           ...styles.aboutAparatStatInfoItemButton,
-                          opacity: guardInformation ? 1 : 0,
+                          opacity:
+                            userRole !== "DEALER" && guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={
+                          userRole !== "DEALER" && guardInformation ? 1 : 0
+                        }
+                        disabled={
+                          userRole !== "DEALER" && guardInformation
+                            ? false
+                            : true
+                        }
                         onPress={async () => {
+                          if (userRole === "DEALER" && !guardInformation)
+                            return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -1098,7 +1257,11 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          console.log(guardInformation);
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -1159,7 +1322,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           // if (!information.number_score) {
                           //   showMessage({
                           //     message: t("Помилка"),
@@ -1231,7 +1397,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           // if (!information.number_score) {
                           //   showMessage({
                           //     message: t("Помилка"),
@@ -1303,7 +1472,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -1366,7 +1538,10 @@ const AboutAparat = () => {
                           ...styles.aboutAparatStatInfoItemButton,
                           opacity: guardInformation ? 1 : 0,
                         }}
+                        activeOpacity={guardInformation ? 1 : 0}
+                        disabled={guardInformation ? false : true}
                         onPress={async () => {
+                          if (!guardInformation) return;
                           const guardCheckInformationEdit = await useGuard(
                             "about-aparat/information/edit"
                           );
@@ -1458,7 +1633,7 @@ const AboutAparat = () => {
                                   onChange={(selected) => {
                                     const changeCompectation =
                                       complectation.map((comp) => {
-                                        if (comp.value.id === item.value.id) {
+                                        if (comp.title.id === item.title.id) {
                                           return {
                                             ...item,
                                             value: {
@@ -1480,18 +1655,41 @@ const AboutAparat = () => {
                           ) : (
                             <>
                               <Text style={styles.aboutAparatStatInfoItemValue}>
-                                {item.value.value}
+                                {item.value.value
+                                  ? item.value.value
+                                  : t("Не обрано")}
                               </Text>
                             </>
                           )}
                         </View>
 
                         <TouchableOpacity
+                          activeOpacity={
+                            !Boolean(
+                              guardComplectation && item.variant.length !== 0
+                            )
+                              ? 1
+                              : 0
+                          }
                           style={{
                             ...styles.aboutAparatStatInfoItemButton,
-                            opacity: guardComplectation ? 1 : 0,
+                            opacity:
+                              guardComplectation && item.variant.length !== 0
+                                ? 1
+                                : 0,
                           }}
+                          disabled={
+                            !Boolean(
+                              guardComplectation && item.variant.length !== 0
+                            )
+                          }
                           onPress={async () => {
+                            if (
+                              !Boolean(
+                                guardComplectation && item.variant.length !== 0
+                              )
+                            )
+                              return;
                             const guardCheckComplectationEdit = await useGuard(
                               "about-aparat/complectation/edit"
                             );
@@ -1546,9 +1744,13 @@ const AboutAparat = () => {
 
                         <View style={styles.aboutAparatStatInfoItemUpdateBlock}>
                           <Text style={styles.aboutAparatStatInfoItemValue}>
-                            {Number(
-                              information?.all_sell ? information?.all_sell : 0
-                            ) - Number(item.value.value)}
+                            {item.value.value === null
+                              ? information?.all_sell
+                              : Number(
+                                  information?.all_sell
+                                    ? information?.all_sell
+                                    : 0
+                                ) - Number(item.value.value)}
                             {/* {item.value.value} */}
                           </Text>
                         </View>
@@ -1556,9 +1758,22 @@ const AboutAparat = () => {
                         <TouchableOpacity
                           style={{
                             ...styles.aboutAparatStatInfoItemButton,
-                            opacity: guardService ? 1 : 0,
+                            opacity:
+                              guardService && item.value.id !== null ? 1 : 0,
                           }}
+                          activeOpacity={
+                            !Boolean(guardService && item.value.id !== null)
+                              ? 1
+                              : 0
+                          }
+                          disabled={
+                            !Boolean(guardService && item.value.id !== null)
+                          }
                           onPress={async () => {
+                            if (
+                              !Boolean(guardService && item.value.id !== null)
+                            )
+                              return;
                             const guardCheckServiceEdit = await useGuard(
                               "about-aparat/service/edit"
                             );

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import EditIcon from "../../assets/icons/EditIcon";
+import useVerify from "../hooks/useVerify";
 
 const Information = ({
   isActiveTab = false,
@@ -45,7 +46,7 @@ const Information = ({
 
   const updateInformation = async () => {
     try {
-      const { dataFetch } = await useVerify();
+      const { verify, dataFetch } = await useVerify();
       const token = await AsyncStorage.getItem("token");
       const lang = await AsyncStorage.getItem("lang");
 

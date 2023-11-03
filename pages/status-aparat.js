@@ -73,7 +73,8 @@ const StatusAparat = () => {
 
   const getStart = async () => {
     try {
-      const { dataFetch } = await useVerify();
+      const { dataFetch, verify } = await useVerify();
+      if (!verify) navigation.navigate("home");
       const token = await AsyncStorage.getItem("token");
 
       const result = await axios(

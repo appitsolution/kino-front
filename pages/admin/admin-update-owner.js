@@ -25,6 +25,7 @@ import FlashMessage from "react-native-flash-message";
 import { showMessage, hideMessage } from "react-native-flash-message";
 import { useTranslation } from "react-i18next";
 import MenuMobile from "../../components/Menu";
+import useVerify from "../../components/hooks/useVerify";
 
 const AdminUpdateOwner = () => {
   const isFocused = useIsFocused();
@@ -128,12 +129,17 @@ const AdminUpdateOwner = () => {
 
   const getOwner = async () => {
     try {
+      const { dataFetch, verify } = await useVerify();
+      if (!verify) navigation.navigate("home");
       const token = await AsyncStorage.getItem("token");
-      const result = await axios(`${SERVER}/admininstration/quick`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const result = await axios(
+        `${SERVER}/admininstration/quick?user_id=${dataFetch.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const currentOwner = result.data.owners.find((item) => item.id === id);
 

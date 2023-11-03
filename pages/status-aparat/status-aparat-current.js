@@ -188,11 +188,11 @@ const StatusAparatCurrent = () => {
 
   const getStart = async () => {
     try {
+      const { dataFetch, verify } = await useVerify();
+      if (!verify) navigation.navigate("home");
       const token = await AsyncStorage.getItem("token");
 
       const lang = await AsyncStorage.getItem("lang");
-
-      const { dataFetch } = await useVerify();
 
       const result = await axios(
         `${SERVER}/status-devices/device?lang=${lang}&serial_number=${serial_number}`,
