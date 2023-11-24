@@ -104,8 +104,7 @@ const styles = StyleSheet.create({
       left: 0,
       backgroundColor: "white",
       width: "100%",
-      maxHeight: 280,
-      overflow: "hidden",
+      // height: "100%",
 
       borderRadius: 21,
       borderWidth: 1,

@@ -284,7 +284,6 @@ const Statistics = () => {
       result = Object.values(monthlyGroupedData);
     }
 
-    console.log(result);
     return result;
   };
 
@@ -365,7 +364,6 @@ const Statistics = () => {
       result = Object.values(monthlyGroupedData);
     }
 
-    console.log(result);
     return result;
   };
 
@@ -423,11 +421,13 @@ const Statistics = () => {
             0
           );
 
-          if (selectDays.value === "week" || selectDays.value === "day") {
+          if (
+            selectDays.value !== "day" &&
+            selectTable.value === "table_agre"
+          ) {
             setDataStatTableRow([
               "ID",
               t("Дата"),
-              t("Час"),
               t(`Кількість`, { totalPortions }),
               t(`Ціна порцій`, { totalPrice }),
             ]);
@@ -435,6 +435,7 @@ const Statistics = () => {
             setDataStatTableRow([
               "ID",
               t("Дата"),
+              t("Час"),
               t(`Кількість`, { totalPortions }),
               t(`Ціна порцій`, { totalPrice }),
             ]);
@@ -443,11 +444,13 @@ const Statistics = () => {
           sortDateTime(groupData);
 
           const newTableData = groupData.map((item, index) => {
-            if (selectDays.value === "week" || selectDays.value === "day") {
+            if (
+              selectDays.value !== "day" &&
+              selectTable.value === "table_agre"
+            ) {
               return [
                 index + 1,
                 parseDateToCustomFormat2(item.date),
-                item.time.slice(0, 5),
                 item.portions,
                 item.price,
               ];
@@ -455,6 +458,7 @@ const Statistics = () => {
               return [
                 index + 1,
                 parseDateToCustomFormat2(item.date),
+                item.time.slice(0, 5),
                 item.portions,
                 item.price,
               ];
@@ -468,12 +472,36 @@ const Statistics = () => {
             return item.portions;
           });
 
-          const newGraphicsLabel = groupStatGraph(
-            result.data,
-            selectDays.value
-          ).map((item) => {
-            return item.time.slice(0, 5);
-          });
+          const newGraphicsLabel = (() => {
+            if (selectDays.value === "day") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.time;
+                }
+              );
+            }
+            if (selectDays.value === "week") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return `${item.date.slice(8, 10)}\n${item.time}`;
+                }
+              );
+            }
+            if (selectDays.value === "month") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date.slice(8, 10);
+                }
+              );
+            }
+            if (selectDays.value === "year") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date;
+                }
+              );
+            }
+          })();
 
           setDataGraphics(newGraphicsData);
 
@@ -592,12 +620,36 @@ const Statistics = () => {
             return item.portions;
           });
 
-          const newGraphicsLabel = groupStatGraph(
-            result.data,
-            selectDays.value
-          ).map((item) => {
-            return item.time.slice(0, 5);
-          });
+          const newGraphicsLabel = (() => {
+            if (selectDays.value === "day") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.time;
+                }
+              );
+            }
+            if (selectDays.value === "week") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return `${item.date.slice(8, 10)}\n${item.time}`;
+                }
+              );
+            }
+            if (selectDays.value === "month") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date.slice(8, 10);
+                }
+              );
+            }
+            if (selectDays.value === "year") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date;
+                }
+              );
+            }
+          })();
 
           const newGraphicsDataAlt = groupStatGraph(
             resultAlt.data,
@@ -606,12 +658,36 @@ const Statistics = () => {
             return item.portions;
           });
 
-          const newGraphicsLabelAlt = groupStatGraph(
-            resultAlt.data,
-            selectDays.value
-          ).map((item) => {
-            return item.time.slice(0, 5);
-          });
+          const newGraphicsLabelAlt = (() => {
+            if (selectDays.value === "day") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.time;
+                }
+              );
+            }
+            if (selectDays.value === "week") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return `${item.date.slice(8, 10)}\n${item.time}`;
+                }
+              );
+            }
+            if (selectDays.value === "month") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date.slice(8, 10);
+                }
+              );
+            }
+            if (selectDays.value === "year") {
+              return groupStatGraph(result.data, selectDays.value).map(
+                (item) => {
+                  return item.date;
+                }
+              );
+            }
+          })();
 
           setDataGraphics(newGraphicsData);
 

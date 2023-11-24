@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   SafeAreaView,
+  ScrollViewPropertiesAndroid,
 } from "react-native";
 import styles from "../styles/about-aparat";
 import Logo from "../assets/icons/Logo";
@@ -123,14 +124,13 @@ const AboutAparat = () => {
 
         return;
       }
-
+      console.log(result.data.information.shipment_date);
       if (result.data.information?.shipment_date) {
         setDate(new Date(result.data.information.shipment_date));
       }
+
       if (result.data.information?.commissioning_date) {
         setDateGlobal(new Date(result.data.information.commissioning_date));
-      } else {
-        setDateGlobal(0);
       }
 
       if (result.data.information?.owner) {
@@ -171,6 +171,10 @@ const AboutAparat = () => {
     const searchAparat = aparatList.find((item) => item.id === id);
 
     AsyncStorage.setItem("lastAboutAparat", String(searchAparat.id));
+    setSelectedOwners("");
+    setSelectedUsers("");
+    setSelectedDealer("");
+    setSelectedOperator("");
 
     setIsOpenSelect(false);
 
@@ -267,7 +271,7 @@ const AboutAparat = () => {
 
     const aparatListFilter = result.data.map((item) => {
       if (!item.location) {
-        item.location = "Не вказано";
+        item.location = t("Не вказано");
       }
       if (!item.name) {
         item.name = item.serial_number;
@@ -327,8 +331,14 @@ const AboutAparat = () => {
             operator: selectedOperator
               ? selectedOperator
               : information.operator,
-            shipment_date: parseDateToCustomFormat(date),
-            commissioning_date: parseDateToCustomFormat(dateGlobal),
+            shipment_date:
+              new Date(date) < new Date("1900-01-01")
+                ? ""
+                : parseDateToCustomFormat(date),
+            commissioning_date:
+              new Date(dateGlobal) < new Date("1900-01-01")
+                ? ""
+                : parseDateToCustomFormat(dateGlobal),
             number_score: information.number_score,
             number_act: information.number_act,
             lang: lang,
@@ -344,8 +354,14 @@ const AboutAparat = () => {
               ? selectedOperator
               : information.operator,
             serial_number: selectedSerialNumber,
-            shipment_date: parseDateToCustomFormat(date),
-            commissioning_date: parseDateToCustomFormat(dateGlobal),
+            shipment_date:
+              new Date(date) < new Date("1900-01-01")
+                ? ""
+                : parseDateToCustomFormat(date),
+            commissioning_date:
+              new Date(dateGlobal) < new Date("1900-01-01")
+                ? ""
+                : parseDateToCustomFormat(dateGlobal),
             number_score: information.number_score,
             number_act: information.number_act,
             lang: lang,
@@ -378,6 +394,10 @@ const AboutAparat = () => {
           type: "success",
           duration: 5000,
         });
+        // setSelectedOwners("");
+        // setSelectedUsers("");
+        // setSelectedDealer("");
+        // setSelectedOperator("");
         setCurrentAparat({
           ...currentAparat,
           serial_number: selectedSerialNumber,
@@ -641,7 +661,33 @@ const AboutAparat = () => {
               </TouchableOpacity>
 
               <View style={styles.aboutAparatSelectModal(isOpenSelect)}>
-                <ScrollView showsVerticalScrollIndicator={false}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
+                  disableIntervalMomentum={true}
+                >
+                  {aparatList.map((item, index) => (
+                    <TouchableOpacity
+                      style={styles.aboutAparatSelectModalItem}
+                      key={index}
+                      onPress={() => changeCurrentAparat(item.id)}
+                    >
+                      <Text style={styles.aboutAparatSelectModalItemName}>
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={{
+                          ...styles.aboutAparatSelectModalItemName,
+                          maxWidth: 120,
+                        }}
+                      >
+                        {item.location}
+                      </Text>
+                      <Text style={styles.aboutAparatSelectModalItemScore}>
+                        {item.serial_number}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                   {aparatList.map((item, index) => (
                     <TouchableOpacity
                       style={styles.aboutAparatSelectModalItem}
@@ -1461,7 +1507,9 @@ const AboutAparat = () => {
                         ) : (
                           <>
                             <Text style={styles.aboutAparatStatInfoItemValue}>
-                              {parseDateToCustomFormat(date)}
+                              {new Date(date) < new Date("1900-01-01")
+                                ? t("Не обрано")
+                                : parseDateToCustomFormat(date)}
                             </Text>
                           </>
                         )}
@@ -1527,7 +1575,9 @@ const AboutAparat = () => {
                         ) : (
                           <>
                             <Text style={styles.aboutAparatStatInfoItemValue}>
-                              {parseDateToCustomFormat(dateGlobal)}
+                              {new Date(dateGlobal) < new Date("1900-01-01")
+                                ? t("Не обрано")
+                                : parseDateToCustomFormat(dateGlobal)}
                             </Text>
                           </>
                         )}

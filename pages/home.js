@@ -55,7 +55,6 @@ const Home = () => {
       });
 
       const tokenNotification = await registerForPushNotificationsAsync();
-
       if (result.data.code !== 200) {
         return setErrorLogin(true);
       }
