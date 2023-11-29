@@ -99,12 +99,14 @@ const AdminUpdateOwner = () => {
     try {
       const token = await AsyncStorage.getItem("token");
 
-      const result = await axios.delete(`${SERVER}/admininstration/owner`, {
-        data: { owner: owner.owner },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const result = await axios.delete(
+        `${SERVER}/admininstration/owner?name=${owner.owner}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (result.data.code === 200) {
         showMessage({
